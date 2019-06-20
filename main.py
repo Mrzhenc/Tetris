@@ -164,15 +164,14 @@ class MainWindow(object):
             # 判断当时是否有可消除行
             tmp_score = 0
             for i in range(BLOCK_NUM_Y):
-                if self.block_area_map[BLOCK_NUM_Y-1].count('0') == BLOCK_NUM_X:
+                if self.block_area_map[BLOCK_NUM_Y-1-i].count('0') == BLOCK_NUM_X:
                     # 得分 行数*10
                     tmp_score += 10*(i+1)
-                    self.block_area_map.pop()
+                    self.block_area_map.pop(BLOCK_NUM_Y-1-i)
                     new_line = []
-                    for i in range(BLOCK_NUM_X):
+                    for j in range(BLOCK_NUM_X):
                         new_line.append('.')
                     self.block_area_map.insert(0, new_line)
-                    print(len(self.block_area_map))
 
             global score
             score += tmp_score
