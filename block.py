@@ -17,17 +17,17 @@ Z_BLOCK = [Block(['00.',
            Block(['0..',
                   '00.',
                   '.0.'], Point(0, 0), Point(2, 1), Height(2, 3, 0), 'Z', 3),
-           Block(['..0',
-                  '.00',
-                  '.0.'], Point(0, 1), Point(2, 2), Height(3, 2, 0), 'Z', 0)]
+           Block(['.0.',
+                  '00.',
+                  '0..'], Point(0, 0), Point(2, 1), Height(3, 2, 0), 'Z', 0)]
 
 
 T_BLOCK = [Block(['000',
                   '.0.',
                   '...'], Point(0, 0), Point(1, 2), Height(1, 2, 1), 'T', 1),
-           Block(['.0.',
-                  '.00',
-                  '.0.'], Point(0, 1), Point(2, 2), Height(3, 2, 0), 'T', 2),
+           Block(['0..',
+                  '00.',
+                  '0..'], Point(0, 0), Point(2, 1), Height(3, 2, 0), 'T', 2),
            Block(['.0.',
                   '000',
                   '...'], Point(0, 0), Point(1, 2), Height(2, 2, 2), 'T', 3),
@@ -36,9 +36,9 @@ T_BLOCK = [Block(['000',
                   '.0.'], Point(0, 0), Point(2, 1), Height(2, 3, 0), 'T', 0)]
 
 
-I_BLOCK = [Block(['.0.',
-                  '.0.',
-                  '.0.'], Point(0, 1), Point(2, 1), Height(3, 0, 0), 'I', 1),
+I_BLOCK = [Block(['0..',
+                  '0..',
+                  '0..'], Point(0, 0), Point(2, 0), Height(3, 0, 0), 'I', 1),
            Block(['...',
                   '000',
                   '...'], Point(1, 0), Point(1, 2), Height(2, 2, 2), 'I', 0)]
@@ -46,19 +46,19 @@ I_BLOCK = [Block(['.0.',
 J_BLOCK = [Block(['0..',
                   '000',
                   '...'], Point(0, 0), Point(1, 2), Height(2, 2, 2), 'J', 1),
-           Block(['.00',
-                  '.0.',
-                  '.0.'], Point(0, 1), Point(2, 2), Height(3, 1, 0), 'J', 2),
+           Block(['00.',
+                  '0..',
+                  '0..'], Point(0, 0), Point(2, 1), Height(3, 1, 0), 'J', 2),
            Block(['...',
                   '000',
                   '..0'], Point(1, 0), Point(2, 2), Height(2, 2, 3), 'J', 3),
-           Block(['.0.',
-                  '.0.',
-                  '.00'], Point(0, 1), Point(2, 2), Height(3, 3, 0), 'J', 0)]
+           Block(['0..',
+                  '0..',
+                  '00.'], Point(0, 0), Point(2, 1), Height(3, 3, 0), 'J', 0)]
 
-O_BLOCK = [Block(['.00',
-                  '.00',
-                  '...'], Point(0, 1), Point(1, 2), Height(2, 2, 0), 'O', 0)]
+O_BLOCK = [Block(['00.',
+                  '00.',
+                  '...'], Point(0, 0), Point(1, 1), Height(2, 2, 0), 'O', 0)]
 
 
 BLOCKS = {"Z": Z_BLOCK,

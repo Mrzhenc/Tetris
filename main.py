@@ -15,9 +15,10 @@ class MainWindow(object):
         self.main_window = None
         self.background = None
         self.font = None
+        self.game_over_font = None
         self.cur_pos_x = BLOCK_NUM_X / 2
         self.cur_pos_y = 0  # 应该指在当前方块的最底部
-        self.delay_time = 500
+        self.delay_time = 200
         # 保存当前已下落的块
         self.cur_blk_list = []
         self.cur_height = 0
@@ -35,7 +36,10 @@ class MainWindow(object):
         # print(self.block_area_map)
 
     def print_text(self, text, pos_x, pos_y, text_color=WHITE):
-        img_text = self.font.render(text, True, text_color)
+        if text == f'Game Over':
+            img_text = self.game_over_font.render(text, True, text_color)
+        else:
+            img_text = self.font.render(text, True, text_color)
         self.main_window.blit(img_text, (pos_x, pos_y))
 
     def draw_rect(self, pos_x, pos_y):
@@ -43,6 +47,7 @@ class MainWindow(object):
 
     def init_game(self):
         self.font = pygame.font.SysFont('SimHei', 30)
+        self.game_over_font = pygame.font.SysFont('SimHei', 60)
         self.main_window = pygame.display.set_mode([self.window_x, self.window_y])
         pygame.display.set_caption("俄罗斯方块")
         self.main_window.fill(BG_COLOR)
@@ -77,6 +82,7 @@ class MainWindow(object):
         pause = False
         # move_left = False
         # move_right = False
+        game_over_text = "Game Over"
 
         while True:
             if not cur_blk:
@@ -111,9 +117,7 @@ class MainWindow(object):
                             self.cur_pos_x += 1
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
                     if self.cur_pos_x > 0:
-                        key_press = pygame.key.get_pressed()
-                        if key_press[pygame.K_LEFT]:
-                            self.cur_pos_x -= 1
+                        self.cur_pos_x -= 1
 
             if pause:
                 continue
@@ -137,13 +141,14 @@ class MainWindow(object):
             # print(self.cur_pos_y, self.cur_pos_x + cur_blk.end_pos.pos_x+1)
 
             for (x_pos, h) in zip(range(cur_blk.start_pos.pos_y, cur_blk.end_pos.pos_y+1), cur_blk.height):
+                # print(self.cur_pos_y, h, self.cur_pos_x, x_pos)
                 if self.block_area_map[int(self.cur_pos_y)+h][int(self.cur_pos_x+x_pos)] != '0':
                     continue
 
                 # 无法下落时，判断是否结束游戏
-                # if self.cur_pos_y == 0:
-                #     pause = True
-                #     print("game over")
+                if self.cur_pos_y == 1:
+                    pause = True
+                    self.print_text(f'{game_over_text}', BLOCK_NUM_X/2*BLOCK_X-120, BLOCK_NUM_Y/2*BLOCK_X)
 
                 for i in range(cur_blk.start_pos.pos_x, cur_blk.end_pos.pos_x + 1):
                     for j in range(cur_blk.start_pos.pos_y, cur_blk.end_pos.pos_y + 1):
@@ -155,10 +160,26 @@ class MainWindow(object):
                 self.cur_pos_y = 0
                 self.cur_pos_x = BLOCK_NUM_X / 2
                 break
-            else:
-                self.cur_pos_y += 1
-                pygame.display.update()
-                continue
+            # else:
+            # 判断当时是否有可消除行
+            tmp_score = 0
+            for i in range(BLOCK_NUM_Y):
+                if self.block_area_map[BLOCK_NUM_Y-1].count('0') == BLOCK_NUM_X:
+                    # 得分 行数*10
+                    tmp_score += 10*(i+1)
+                    self.block_area_map.pop()
+                    new_line = []
+                    for i in range(BLOCK_NUM_X):
+                        new_line.append('.')
+                    self.block_area_map.insert(0, new_line)
+                    print(len(self.block_area_map))
+
+            global score
+            score += tmp_score
+
+            self.cur_pos_y += 1
+            pygame.display.update()
+            continue
 
 
 if __name__ == "__main__":
