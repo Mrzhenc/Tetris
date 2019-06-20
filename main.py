@@ -18,11 +18,14 @@ class MainWindow(object):
         self.game_over_font = None
         self.cur_pos_x = BLOCK_NUM_X / 2
         self.cur_pos_y = 0  # 应该指在当前方块的最底部
-        self.delay_time = 200
+        self.delay_time = 100
         # 保存当前已下落的块
         self.cur_blk_list = []
         self.cur_height = 0
         self.block_area_map = []
+        self.next_blk = None
+        self.cur_blk = None
+        self.start = False
         for i in range(BLOCK_NUM_Y):
             self.block_area_map.append([])
             for j in range(BLOCK_NUM_X):
@@ -42,8 +45,11 @@ class MainWindow(object):
             img_text = self.font.render(text, True, text_color)
         self.main_window.blit(img_text, (pos_x, pos_y))
 
-    def draw_rect(self, pos_x, pos_y):
-        pygame.draw.rect(self.main_window, BLOCK_COLOR, (pos_x, pos_y, BLOCK_X, BLOCK_Y))
+    def draw_rect(self, pos_x, pos_y, btn=False):
+        if btn:
+            pygame.draw.rect(self.main_window, BTN_COLOR, (pos_x, pos_y, BTN_WIDTH, BTN_HEIGHT))
+        else:
+            pygame.draw.rect(self.main_window, BLOCK_COLOR, (pos_x, pos_y, BLOCK_X, BLOCK_Y))
 
     def init_game(self):
         self.font = pygame.font.SysFont('SimHei', 30)
@@ -51,7 +57,7 @@ class MainWindow(object):
         self.main_window = pygame.display.set_mode([self.window_x, self.window_y])
         pygame.display.set_caption("俄罗斯方块")
         self.main_window.fill(BG_COLOR)
-        font_x = TIP_WINDOW_X + 10
+        font_x = TIP_WINDOW_X + 50
         font_y = int(self.font.size('得分')[1])
         pygame.draw.line(self.main_window, SPLIT_COLOR, (TIP_WINDOW_X, 0),
                          (TIP_WINDOW_X, WINDOW_Y), 3)
@@ -61,10 +67,29 @@ class MainWindow(object):
         font_y += 30
         self.print_text(f'{score}', font_x, font_y)
 
-        font_y += 50
+        font_y += 60
         self.print_text(f'速度:', font_x, font_y)
         font_y += 30
         self.print_text(f'{score // 10}', font_x, font_y)
+
+        font_y += 60
+        self.print_text(f'下一个:', font_x, font_y)
+        font_y += 30
+        if self.cur_blk:
+            self.next_blk = get_next_block(self.cur_blk)
+            self.draw_block(self.next_blk, font_x, font_y)
+
+        font_y += 200
+        self.draw_rect(font_x, font_y, btn=True)
+        self.print_text(f'开始', font_x+10, font_y+5)
+
+        font_y += 100
+        self.draw_rect(font_x, font_y, btn=True)
+        self.print_text(f'暂停', font_x+10, font_y+5)
+
+        font_y += 100
+        self.draw_rect(font_x, font_y, btn=True)
+        self.print_text(f'重开', font_x+10, font_y+5)
 
         # 画格子
         for i in range(BLOCK_NUM_X):
@@ -73,23 +98,29 @@ class MainWindow(object):
         for j in range(BLOCK_NUM_Y):
             pygame.draw.line(self.main_window, SPLIT_COLOR, (0, j*BLOCK_X), (BLOCK_X*BLOCK_NUM_X, j*BLOCK_X), 1)
 
+    def draw_block(self, blk, pos_x, pos_y):
+        for i in range(blk.start_pos.pos_x, blk.end_pos.pos_x + 1):
+            for j in range(blk.start_pos.pos_y, blk.end_pos.pos_y + 1):
+                if blk.template[i][j] == '0':
+                    self.draw_rect((j + pos_x) * BLOCK_X, (i + pos_y) * BLOCK_X)
+
     def run(self):
 
         # 设置背景
         # self.main_window.blit(self.background, (0, 0))
 
-        cur_blk = None
+        self.cur_blk = None
         pause = False
         # move_left = False
         # move_right = False
         game_over_text = "Game Over"
 
         while True:
-            if not cur_blk:
-                cur_blk = get_block()
-                for i in range(cur_blk.start_pos.pos_x, cur_blk.end_pos.pos_x + 1):
-                    for j in range(cur_blk.start_pos.pos_y, cur_blk.end_pos.pos_y + 1):
-                        if cur_blk.template[i][j] == '0':
+            if not self.cur_blk:
+                self.cur_blk = get_block()
+                for i in range(self.cur_blk.start_pos.pos_x, self.cur_blk.end_pos.pos_x + 1):
+                    for j in range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y + 1):
+                        if self.cur_blk.template[i][j] == '0':
                             self.draw_rect((j + self.cur_pos_x) * BLOCK_X, i * BLOCK_X)
             pygame.time.delay(self.delay_time)
             for event in pygame.event.get():
@@ -106,14 +137,14 @@ class MainWindow(object):
                 elif event.type == pygame.KEYUP and event.key == pygame.K_DOWN:
                     self.delay_time += 100
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-                    tmp_blk = get_next_block(cur_blk)
-                    if (BLOCK_NUM_X - self.cur_pos_x) > tmp_blk.end_pos.pos_y+1:
-                        cur_blk = tmp_blk
+                    self.next_blk = get_next_block(self.cur_blk)
+                    if (BLOCK_NUM_X - self.cur_pos_x) > self.next_blk.end_pos.pos_y+1:
+                        self.cur_blk = self.next_blk
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
                     # 边界判断
-                    if (BLOCK_NUM_X - cur_blk.end_pos.pos_y - 1) > self.cur_pos_x >= 0:
+                    if (BLOCK_NUM_X - self.cur_blk.end_pos.pos_y - 1) > self.cur_pos_x >= 0:
                         # 判断右边是否有块
-                        if self.block_area_map[int(self.cur_pos_y)][int(self.cur_pos_x+cur_blk.end_pos.pos_y)] != '0':
+                        if self.block_area_map[int(self.cur_pos_y)][int(self.cur_pos_x+self.cur_blk.end_pos.pos_y)] != '0':
                             self.cur_pos_x += 1
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
                     if self.cur_pos_x > 0:
@@ -123,10 +154,10 @@ class MainWindow(object):
                 continue
             self.init_game()
             # 绘制当前下落方块
-            if cur_blk:
-                for i in range(cur_blk.start_pos.pos_x, cur_blk.end_pos.pos_x + 1):
-                    for j in range(cur_blk.start_pos.pos_y, cur_blk.end_pos.pos_y+1):
-                        if cur_blk.template[i][j] == '0':
+            if self.cur_blk:
+                for i in range(self.cur_blk.start_pos.pos_x, self.cur_blk.end_pos.pos_x + 1):
+                    for j in range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y+1):
+                        if self.cur_blk.template[i][j] == '0':
                             self.draw_rect((j + self.cur_pos_x) * BLOCK_X, (i+self.cur_pos_y) * BLOCK_X)
 
             for idx_y, x_pos in enumerate(self.block_area_map):
@@ -140,7 +171,7 @@ class MainWindow(object):
 
             # print(self.cur_pos_y, self.cur_pos_x + cur_blk.end_pos.pos_x+1)
 
-            for (x_pos, h) in zip(range(cur_blk.start_pos.pos_y, cur_blk.end_pos.pos_y+1), cur_blk.height):
+            for (x_pos, h) in zip(range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y+1), self.cur_blk.height):
                 # print(self.cur_pos_y, h, self.cur_pos_x, x_pos)
                 if self.block_area_map[int(self.cur_pos_y)+h][int(self.cur_pos_x+x_pos)] != '0':
                     continue
@@ -150,13 +181,13 @@ class MainWindow(object):
                     pause = True
                     self.print_text(f'{game_over_text}', BLOCK_NUM_X/2*BLOCK_X-120, BLOCK_NUM_Y/2*BLOCK_X)
 
-                for i in range(cur_blk.start_pos.pos_x, cur_blk.end_pos.pos_x + 1):
-                    for j in range(cur_blk.start_pos.pos_y, cur_blk.end_pos.pos_y + 1):
+                for i in range(self.cur_blk.start_pos.pos_x, self.cur_blk.end_pos.pos_x + 1):
+                    for j in range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y + 1):
                         # print(j, self.cur_pos_x)
-                        if cur_blk.template[i][j] == '0':
+                        if self.cur_blk.template[i][j] == '0':
                             self.block_area_map[int(self.cur_pos_y)+i][int(self.cur_pos_x)+j] = '0'
 
-                cur_blk = None
+                self.cur_blk = None
                 self.cur_pos_y = 0
                 self.cur_pos_x = BLOCK_NUM_X / 2
                 break
