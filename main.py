@@ -4,7 +4,17 @@ from sys import exit
 from pygame.locals import *
 from common import *
 from block import *
+import threading
 score = 0
+
+#
+# class MoveThread(threading):
+#     def __init__(self):
+#         super(MoveThread.self).__init__()
+#         self.pos_x = 0
+#
+#     def run(self):
+#         pass
 
 
 class MainWindow(object):
@@ -12,13 +22,15 @@ class MainWindow(object):
         pygame.init()
         self.window_x = WINDOW_X
         self.window_y = WINDOW_Y
-        self.main_window = None
+        # self.main_window = None
+        self.main_window = pygame.display.set_mode([self.window_x, self.window_y])
+        pygame.display.set_caption("俄罗斯方块")
         self.background = None
         self.font = None
         self.game_over_font = None
         self.cur_pos_x = BLOCK_NUM_X / 2
         self.cur_pos_y = 0  # 应该指在当前方块的最底部
-        self.delay_time = 0
+        self.delay_time = 500
         self.cur_height = 0
         # 保存当前已下落的块
         self.block_area_map = []
@@ -27,6 +39,7 @@ class MainWindow(object):
         self.start = False
         self.pause = False
         self.is_end = False
+        self.speed_up = 0
         self.status = "暂停"
         self.btn_map = {"start": [], "restart": [], "stop": []}
         for i in range(BLOCK_NUM_Y):
@@ -55,8 +68,6 @@ class MainWindow(object):
     def init_game(self):
         self.font = pygame.font.SysFont('SimHei', 30)
         self.game_over_font = pygame.font.SysFont('SimHei', 60)
-        self.main_window = pygame.display.set_mode([self.window_x, self.window_y])
-        pygame.display.set_caption("俄罗斯方块")
         self.main_window.fill(BG_COLOR)
         font_x = TIP_WINDOW_X + 50
         font_y = int(self.font.size('得分')[1])
@@ -137,6 +148,7 @@ class MainWindow(object):
         # move_left = False
         # move_right = False
         game_over_text = "Game Over"
+        pygame.key.set_repeat(1, 1)
 
         while True:
             if not self.cur_blk:
@@ -149,37 +161,52 @@ class MainWindow(object):
                     for j in range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y + 1):
                         if self.cur_blk.template[i][j] == '0':
                             self.draw_rect((j + self.cur_pos_x) * BLOCK_X, i * BLOCK_X)
-            pygame.time.delay(self.delay_time)
+            pygame.time.delay(self.delay_time-self.speed_up)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    # 暂停
-                    if self.pause:
-                        self.status = "暂停"
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_s:
+                        tmp_blk = get_next_block(self.cur_blk)
+                        if (BLOCK_NUM_X - self.cur_pos_x) > tmp_blk.end_pos.pos_y+1:
+                            self.cur_blk = tmp_blk
+                    elif event.key == pygame.K_RIGHT:
+                        if self.is_end or self.pause or not self.start:
+                            break
+                        # 边界判断
+                        if (BLOCK_NUM_X - self.cur_blk.end_pos.pos_y - 1) > self.cur_pos_x >= 0:
+                            # 判断右边是否有块
+                            if self.block_area_map[int(self.cur_pos_y)][int(self.cur_pos_x+self.cur_blk.end_pos.pos_y)] != '0':
+                                self.cur_pos_x += 1
+                    elif event.key == pygame.K_LEFT:
+                        if self.is_end or self.pause or not self.start:
+                            break
+                        if self.cur_pos_x > 0:
+                            self.cur_pos_x -= 1
+                    elif event.key == pygame.K_SPACE:
+                        # 暂停
+                        if self.pause:
+                            self.status = "暂停"
+                        else:
+                            self.status = '继续'
+                        self.pause = not self.pause
+                    elif event.key == pygame.K_DOWN:
+                        if self.speed_up == 0:
+                            self.speed_up += 500
+                        # if self.speed_up != (self.delay_time-200):
+                        #     self.delay_time -= 200
                     else:
-                        self.status = '继续'
-                    self.pause = not self.pause
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-                    # 加速键
-                    self.delay_time -= 100
-                elif event.type == pygame.KEYUP and event.key == pygame.K_DOWN:
-                    self.delay_time += 100
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-                    tmp_blk = get_next_block(self.cur_blk)
-                    if (BLOCK_NUM_X - self.cur_pos_x) > tmp_blk.end_pos.pos_y+1:
-                        self.cur_blk = tmp_blk
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                    # 边界判断
-                    if (BLOCK_NUM_X - self.cur_blk.end_pos.pos_y - 1) > self.cur_pos_x >= 0:
-                        # 判断右边是否有块
-                        if self.block_area_map[int(self.cur_pos_y)][int(self.cur_pos_x+self.cur_blk.end_pos.pos_y)] != '0':
-                            self.cur_pos_x += 1
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                    if self.cur_pos_x > 0:
-                        self.cur_pos_x -= 1
-                elif event.type == pygame.MOUSEBUTTONDOWN and self.btn_map['start'][0] < event.pos[0] < \
+                        pass
+
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_DOWN:
+                        self.speed_up = 0
+                    # elif event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
+                    #     pygame.key.set_repeat()
+
+                if event.type == pygame.MOUSEBUTTONDOWN and self.btn_map['start'][0] < event.pos[0] < \
                         self.btn_map['start'][0]+BTN_WIDTH and self.btn_map['start'][1] < event.pos[1] < \
                         self.btn_map['start'][1]+BTN_HEIGHT:
                     self.start = True
@@ -255,6 +282,7 @@ class MainWindow(object):
                 if self.block_area_map[BLOCK_NUM_Y-1-i].count('0') == BLOCK_NUM_X:
                     # 得分 行数*10
                     tmp_score += 10*(i+1)
+                    self.delay_time -= 50
                     self.block_area_map.pop(BLOCK_NUM_Y-1-i)
                     new_line = []
                     for j in range(BLOCK_NUM_X):
@@ -264,7 +292,7 @@ class MainWindow(object):
             global score
             score += tmp_score
             self.cur_pos_y += 1
-            continue
+            # continue
 
 
 if __name__ == "__main__":
