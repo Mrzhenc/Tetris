@@ -19,9 +19,8 @@ class MainWindow(object):
         self.cur_pos_x = BLOCK_NUM_X / 2
         self.cur_pos_y = 0  # 应该指在当前方块的最底部
         self.delay_time = 100
-        # 保存当前已下落的块
-        self.cur_blk_list = []
         self.cur_height = 0
+        # 保存当前已下落的块
         self.block_area_map = []
         self.next_blk = None
         self.cur_blk = None
@@ -35,8 +34,6 @@ class MainWindow(object):
                 self.block_area_map.append([])
                 for k in range(BLOCK_NUM_X):
                     self.block_area_map[BLOCK_NUM_Y].append('0')
-
-        # print(self.block_area_map)
 
     def print_text(self, text, pos_x, pos_y, text_color=WHITE):
         if text == f'Game Over':
@@ -76,7 +73,8 @@ class MainWindow(object):
         self.print_text(f'下一个:', font_x, font_y)
         font_y += 30
         if self.cur_blk:
-            self.next_blk = get_next_block(self.cur_blk)
+            if not self.next_blk:
+                self.next_blk = get_block()
             self.draw_block(self.next_blk, font_x, font_y)
 
         font_y += 200
@@ -102,7 +100,7 @@ class MainWindow(object):
         for i in range(blk.start_pos.pos_x, blk.end_pos.pos_x + 1):
             for j in range(blk.start_pos.pos_y, blk.end_pos.pos_y + 1):
                 if blk.template[i][j] == '0':
-                    self.draw_rect((j + pos_x) * BLOCK_X, (i + pos_y) * BLOCK_X)
+                    self.draw_rect((pos_x+j*BLOCK_X), (pos_y+i*BLOCK_X))
 
     def run(self):
 
@@ -117,7 +115,11 @@ class MainWindow(object):
 
         while True:
             if not self.cur_blk:
-                self.cur_blk = get_block()
+                if self.next_blk:
+                    self.cur_blk = self.next_blk
+                    self.next_blk = None
+                else:
+                    self.cur_blk = get_block()
                 for i in range(self.cur_blk.start_pos.pos_x, self.cur_blk.end_pos.pos_x + 1):
                     for j in range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y + 1):
                         if self.cur_blk.template[i][j] == '0':
@@ -137,9 +139,11 @@ class MainWindow(object):
                 elif event.type == pygame.KEYUP and event.key == pygame.K_DOWN:
                     self.delay_time += 100
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-                    self.next_blk = get_next_block(self.cur_blk)
-                    if (BLOCK_NUM_X - self.cur_pos_x) > self.next_blk.end_pos.pos_y+1:
-                        self.cur_blk = self.next_blk
+                    # self.cur_blk = get_next_block(self.cur_blk)
+                    tmp_blk = get_next_block(self.cur_blk)
+                    if (BLOCK_NUM_X - self.cur_pos_x) > tmp_blk.end_pos.pos_y+1:
+                        self.cur_blk = tmp_blk
+                        # self.cur_blk = self.next_blk
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
                     # 边界判断
                     if (BLOCK_NUM_X - self.cur_blk.end_pos.pos_y - 1) > self.cur_pos_x >= 0:
