@@ -18,13 +18,17 @@ class MainWindow(object):
         self.game_over_font = None
         self.cur_pos_x = BLOCK_NUM_X / 2
         self.cur_pos_y = 0  # 应该指在当前方块的最底部
-        self.delay_time = 100
+        self.delay_time = 0
         self.cur_height = 0
         # 保存当前已下落的块
         self.block_area_map = []
         self.next_blk = None
         self.cur_blk = None
         self.start = False
+        self.pause = False
+        self.is_end = False
+        self.status = "暂停"
+        self.btn_map = {"start": [], "restart": [], "stop": []}
         for i in range(BLOCK_NUM_Y):
             self.block_area_map.append([])
             for j in range(BLOCK_NUM_X):
@@ -80,14 +84,20 @@ class MainWindow(object):
         font_y += 200
         self.draw_rect(font_x, font_y, btn=True)
         self.print_text(f'开始', font_x+10, font_y+5)
+        self.btn_map['start'].append(font_x+10)
+        self.btn_map['start'].append(font_y+5)
 
         font_y += 100
         self.draw_rect(font_x, font_y, btn=True)
-        self.print_text(f'暂停', font_x+10, font_y+5)
+        self.print_text(f'{self.status}', font_x+10, font_y+5)
+        self.btn_map['stop'].append(font_x+10)
+        self.btn_map['stop'].append(font_y+5)
 
         font_y += 100
         self.draw_rect(font_x, font_y, btn=True)
         self.print_text(f'重开', font_x+10, font_y+5)
+        self.btn_map['restart'].append(font_x+10)
+        self.btn_map['restart'].append(font_y+5)
 
         # 画格子
         for i in range(BLOCK_NUM_X):
@@ -102,13 +112,28 @@ class MainWindow(object):
                 if blk.template[i][j] == '0':
                     self.draw_rect((pos_x+j*BLOCK_X), (pos_y+i*BLOCK_X))
 
-    def run(self):
+    def restart_game(self):
+        del self.block_area_map[:]
+        for i in range(BLOCK_NUM_Y):
+            self.block_area_map.append([])
+            for j in range(BLOCK_NUM_X):
+                self.block_area_map[i].append('.')
 
-        # 设置背景
-        # self.main_window.blit(self.background, (0, 0))
-
+            if i == BLOCK_NUM_Y-1:
+                self.block_area_map.append([])
+                for k in range(BLOCK_NUM_X):
+                    self.block_area_map[BLOCK_NUM_Y].append('0')
         self.cur_blk = None
-        pause = False
+        self.next_blk = None
+        self.start = False
+        self.is_end = False
+        self.cur_pos_x = BLOCK_NUM_X/2
+        self.cur_pos_y = 0
+        global score
+        score = 0
+
+    def run(self):
+        self.cur_blk = None
         # move_left = False
         # move_right = False
         game_over_text = "Game Over"
@@ -131,19 +156,20 @@ class MainWindow(object):
                     exit()
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     # 暂停
-                    pause = not pause
-                    # cur_blk = get_next_block(cur_blk)
+                    if self.pause:
+                        self.status = "暂停"
+                    else:
+                        self.status = '继续'
+                    self.pause = not self.pause
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
                     # 加速键
                     self.delay_time -= 100
                 elif event.type == pygame.KEYUP and event.key == pygame.K_DOWN:
                     self.delay_time += 100
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-                    # self.cur_blk = get_next_block(self.cur_blk)
                     tmp_blk = get_next_block(self.cur_blk)
                     if (BLOCK_NUM_X - self.cur_pos_x) > tmp_blk.end_pos.pos_y+1:
                         self.cur_blk = tmp_blk
-                        # self.cur_blk = self.next_blk
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
                     # 边界判断
                     if (BLOCK_NUM_X - self.cur_blk.end_pos.pos_y - 1) > self.cur_pos_x >= 0:
@@ -153,10 +179,27 @@ class MainWindow(object):
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
                     if self.cur_pos_x > 0:
                         self.cur_pos_x -= 1
+                elif event.type == pygame.MOUSEBUTTONDOWN and self.btn_map['start'][0] < event.pos[0] < \
+                        self.btn_map['start'][0]+BTN_WIDTH and self.btn_map['start'][1] < event.pos[1] < \
+                        self.btn_map['start'][1]+BTN_HEIGHT:
+                    self.start = True
+                elif event.type == pygame.MOUSEBUTTONDOWN and self.btn_map['restart'][0] < event.pos[0] < \
+                        self.btn_map['restart'][0]+BTN_WIDTH and self.btn_map['restart'][1] < event.pos[1] < \
+                        self.btn_map['restart'][1]+BTN_HEIGHT:
+                    self.restart_game()
+                elif event.type == pygame.MOUSEBUTTONDOWN and self.btn_map['stop'][0] < event.pos[0] < \
+                        self.btn_map['stop'][0]+BTN_WIDTH and self.btn_map['stop'][1] < event.pos[1] < \
+                        self.btn_map['stop'][1]+BTN_HEIGHT:
+                    if self.pause:
+                        self.status = "暂停"
+                    else:
+                        self.status = '继续'
+                    self.pause = not self.pause
 
-            if pause:
+            if not self.cur_blk:
                 continue
             self.init_game()
+
             # 绘制当前下落方块
             if self.cur_blk:
                 for i in range(self.cur_blk.start_pos.pos_x, self.cur_blk.end_pos.pos_x + 1):
@@ -173,7 +216,18 @@ class MainWindow(object):
                     if '0' == element:
                         self.draw_rect(idx_x*BLOCK_X, idx_y*BLOCK_Y)
 
-            # print(self.cur_pos_y, self.cur_pos_x + cur_blk.end_pos.pos_x+1)
+            if self.is_end:
+                self.print_text(f'{game_over_text}', BLOCK_NUM_X / 2 * BLOCK_X - 120, BLOCK_NUM_Y / 2 * BLOCK_X)
+                pygame.display.update()
+                continue
+
+            pygame.display.update()
+
+            if self.pause:
+                continue
+
+            if not self.start:
+                continue
 
             for (x_pos, h) in zip(range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y+1), self.cur_blk.height):
                 # print(self.cur_pos_y, h, self.cur_pos_x, x_pos)
@@ -182,12 +236,11 @@ class MainWindow(object):
 
                 # 无法下落时，判断是否结束游戏
                 if self.cur_pos_y == 1:
-                    pause = True
                     self.print_text(f'{game_over_text}', BLOCK_NUM_X/2*BLOCK_X-120, BLOCK_NUM_Y/2*BLOCK_X)
+                    self.is_end = True
 
                 for i in range(self.cur_blk.start_pos.pos_x, self.cur_blk.end_pos.pos_x + 1):
                     for j in range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y + 1):
-                        # print(j, self.cur_pos_x)
                         if self.cur_blk.template[i][j] == '0':
                             self.block_area_map[int(self.cur_pos_y)+i][int(self.cur_pos_x)+j] = '0'
 
@@ -195,7 +248,7 @@ class MainWindow(object):
                 self.cur_pos_y = 0
                 self.cur_pos_x = BLOCK_NUM_X / 2
                 break
-            # else:
+
             # 判断当时是否有可消除行
             tmp_score = 0
             for i in range(BLOCK_NUM_Y):
@@ -210,9 +263,7 @@ class MainWindow(object):
 
             global score
             score += tmp_score
-
             self.cur_pos_y += 1
-            pygame.display.update()
             continue
 
 
