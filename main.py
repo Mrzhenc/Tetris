@@ -57,7 +57,7 @@ class MainWindow(object):
 
     def print_text(self, text, pos_x, pos_y, text_color=WHITE):
         if text == f'Game Over':
-            img_text = self.game_over_font.render(text, True, text_color)
+            img_text = self.game_over_font.render(text, True, RED)
         else:
             img_text = self.font.render(text, True, text_color)
         self.main_window.blit(img_text, (pos_x, pos_y))
