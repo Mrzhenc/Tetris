@@ -153,6 +153,9 @@ class MainWindow(object):
         pygame.key.set_repeat(1, 1)
 
         while True:
+            if self.is_move:
+                pygame.time.delay(100)
+
             if not self.cur_blk:
                 if self.next_blk:
                     self.cur_blk = self.next_blk
