@@ -184,14 +184,16 @@ class MainWindow(object):
                             # 判断右边是否有块
                             if self.block_area_map[int(self.cur_pos_y)][int(self.cur_pos_x+self.cur_blk.end_pos.pos_y)] != '0':
                                 self.cur_pos_x += 1
-                                self.btn_press_time = int(round(time.time() * 1000))
+                                if 0 == self.btn_press_time:
+                                    self.btn_press_time = int(round(time.time() * 1000))
                                 self.is_move = True
                     elif event.key == pygame.K_LEFT:
                         if self.is_end or self.pause or not self.start:
                             break
                         if self.cur_pos_x > 0:
                             self.cur_pos_x -= 1
-                            self.btn_press_time = int(round(time.time()*1000))
+                            if 0 == self.btn_press_time:
+                                self.btn_press_time = int(round(time.time()*1000))
                             self.is_move = True
                     elif event.key == pygame.K_SPACE:
                         # 暂停
@@ -211,6 +213,7 @@ class MainWindow(object):
                         self.speed_up = 0
                     elif event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
                         self.is_move = False
+                        self.btn_press_time = 0
 
                 if event.type == pygame.MOUSEBUTTONDOWN and self.btn_map['start'][0] < event.pos[0] < \
                         self.btn_map['start'][0]+BTN_WIDTH and self.btn_map['start'][1] < event.pos[1] < \
@@ -306,7 +309,8 @@ class MainWindow(object):
             global score
             score += tmp_score
             self.cur_pos_y += 1
-            pygame.time.delay(self.delay_time-self.speed_up)
+            if not self.is_move:
+                pygame.time.delay(self.delay_time-self.speed_up)
 
             # continue
 
