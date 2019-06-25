@@ -43,6 +43,7 @@ class MainWindow(object):
         self.speed_up = 0
         self.status = "暂停"
         self.btn_press_time = 0
+        self.down_time = 0
         self.is_move = False
         self.btn_map = {"start": [], "restart": [], "stop": []}
         for i in range(BLOCK_NUM_Y):
@@ -276,14 +277,20 @@ class MainWindow(object):
                     self.print_text(f'{game_over_text}', BLOCK_NUM_X/2*BLOCK_X-120, BLOCK_NUM_Y/2*BLOCK_X)
                     self.is_end = True
 
-                for i in range(self.cur_blk.start_pos.pos_x, self.cur_blk.end_pos.pos_x + 1):
-                    for j in range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y + 1):
-                        if self.cur_blk.template[i][j] == '0':
-                            self.block_area_map[int(self.cur_pos_y)+i][int(self.cur_pos_x)+j] = '0'
+                if self.down_time == 0:
+                    self.down_time = int(round(time.time()*1000))
 
-                self.cur_blk = None
-                self.cur_pos_y = 0
-                self.cur_pos_x = BLOCK_NUM_X / 2
+                if int(round(time.time()*1000)) - self.down_time > self.delay_time:
+                    # 保存当前下落状态
+                    for i in range(self.cur_blk.start_pos.pos_x, self.cur_blk.end_pos.pos_x + 1):
+                        for j in range(self.cur_blk.start_pos.pos_y, self.cur_blk.end_pos.pos_y + 1):
+                            if self.cur_blk.template[i][j] == '0':
+                                self.block_area_map[int(self.cur_pos_y) + i][int(self.cur_pos_x) + j] = '0'
+
+                    self.cur_blk = None
+                    self.cur_pos_y = 0
+                    self.cur_pos_x = BLOCK_NUM_X / 2
+                    self.down_time = 0
                 break
 
             # 判断当时是否有可消除行
@@ -305,6 +312,10 @@ class MainWindow(object):
                     self.btn_press_time = int(round(time.time()*1000))
                 else:
                     continue
+
+            if self.down_time != 0:
+                pygame.time.delay(self.delay_time - self.speed_up)
+                continue
 
             global score
             score += tmp_score
