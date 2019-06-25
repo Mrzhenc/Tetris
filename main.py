@@ -114,6 +114,7 @@ class MainWindow(object):
         self.btn_map['restart'].append(font_x+10)
         self.btn_map['restart'].append(font_y+5)
 
+    def draw_cell(self):
         # 画格子
         for i in range(BLOCK_NUM_X):
             pygame.draw.line(self.main_window, SPLIT_COLOR, (i*BLOCK_X, 0), (i*BLOCK_X, BLOCK_Y*BLOCK_NUM_Y), 1)
@@ -183,7 +184,8 @@ class MainWindow(object):
                         # 边界判断
                         if (BLOCK_NUM_X - self.cur_blk.end_pos.pos_y - 1) > self.cur_pos_x >= 0:
                             # 判断右边是否有块
-                            if self.block_area_map[int(self.cur_pos_y)][int(self.cur_pos_x+self.cur_blk.end_pos.pos_y)] != '0':
+                            if self.block_area_map[int(self.cur_pos_y)][int(self.cur_pos_x+
+                                                                            self.cur_blk.end_pos.pos_y)] != '0':
                                 self.cur_pos_x += 1
                                 if 0 == self.btn_press_time:
                                     self.btn_press_time = int(round(time.time() * 1000))
@@ -259,6 +261,7 @@ class MainWindow(object):
                 pygame.display.update()
                 continue
 
+            self.draw_cell()
             pygame.display.update()
 
             if self.pause:
